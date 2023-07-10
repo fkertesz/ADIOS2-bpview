@@ -37,7 +37,6 @@ def plot_data(bp_file):
 
     selected_var = var_names[0]  # Set default selected variable to the first one (if available)
 
-
     var_listbox = tk.Listbox(root, width=50)
     var_listbox.pack(side=tk.LEFT, anchor=tk.NW, padx=5, pady=5)
 
@@ -53,7 +52,7 @@ def plot_data(bp_file):
         var_listbox.insert(tk.END, var_info)
     
 
-    var_listbox.select_set(0)  # Select the first variable by default
+    #var_listbox.select_set(0)  # Select the first variable by default
 
     # Right side labels and entries
     selection_frame = ttk.Frame(root)
@@ -97,6 +96,7 @@ def plot_data(bp_file):
     def update_selected_var(event):
         nonlocal selected_var
         selected_var = var_listbox.get(var_listbox.curselection()).split(",")[0].strip()  # Update selected variable based on listbox selection
+    var_listbox.bind("<<ListboxSelect>>", update_selected_var)
 
     var = io.InquireVariable(selected_var)
     shape = var.Shape()
@@ -107,6 +107,10 @@ def plot_data(bp_file):
     def plot_2d():
         nonlocal fr
         
+        var = io.InquireVariable(selected_var)
+        shape = var.Shape()
+        dim = len(shape)
+
         #Step Selection
         try:
             step_start = int(step_start_entry.get())
@@ -182,6 +186,10 @@ def plot_data(bp_file):
     def plot_2d_series():
         nonlocal fr
         
+        var = io.InquireVariable(selected_var)
+        shape = var.Shape()
+        dim = len(shape)
+
         #Step Selection
         try:
             step_start = int(step_start_entry.get())
@@ -261,6 +269,10 @@ def plot_data(bp_file):
     def plot_1d():
         nonlocal fr
     
+        var = io.InquireVariable(selected_var)
+        shape = var.Shape()
+        dim = len(shape)
+
         #Step Selection
         try:
             step_start = int(step_start_entry.get())
@@ -326,6 +338,10 @@ def plot_data(bp_file):
     def plot_1d_series():
         nonlocal fr
     
+        var = io.InquireVariable(selected_var)
+        shape = var.Shape()
+        dim = len(shape)
+
         #Step Selection
         try:
             step_start = int(step_start_entry.get())
@@ -390,6 +406,10 @@ def plot_data(bp_file):
 
     def plot_1d_v_1d():
         nonlocal fr
+
+        var = io.InquireVariable(selected_var)
+        shape = var.Shape()
+        dim = len(shape)
 
         #Step Selection
         try:
@@ -466,6 +486,10 @@ def plot_data(bp_file):
     def display_nd():
         nonlocal fr, var, sel_start_entry, sel_count_entry, step_start_entry
     
+        var = io.InquireVariable(selected_var)
+        shape = var.Shape()
+        dim = len(shape)
+
         #Step Selection
         try:
             step_start = int(step_start_entry.get())
