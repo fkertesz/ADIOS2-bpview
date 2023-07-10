@@ -9,15 +9,15 @@ import matplotlib.gridspec as gridspec
 from tkinter import ttk
 
 
-# Open a file dialog to select a BP file.
+# Load BP file
 def load_bp_file():
     file_path = filedialog.askopenfilename(filetypes=[("BP Files", "*.bp")])  # Select BP file
     if file_path:
         return file_path
 
 
-# Plot 2D data from a BP file.
-def plot_data(bp_file):
+# Read BP file and create window and selections.
+def show_file(bp_file):
     adios = adios2.ADIOS()  # Create ADIOS object
     io = adios.DeclareIO("SimulationOutput")  # Declare IO object
     io.SetEngine("BP5")  # Set engine type to BP5
@@ -93,6 +93,7 @@ def plot_data(bp_file):
     sel_count_entry = ttk.Entry(selection_frame)
     sel_count_entry.pack()
 
+    # Update selected variable when clicked on
     def update_selected_var(event):
         nonlocal selected_var
         selected_var = var_listbox.get(var_listbox.curselection()).split(",")[0].strip()  # Update selected variable based on listbox selection
@@ -102,7 +103,7 @@ def plot_data(bp_file):
     shape = var.Shape()
     dim = len(shape)
 
-    # 2 D plotting
+    # 2D plot
 
     def plot_2d():
         nonlocal fr
@@ -181,7 +182,7 @@ def plot_data(bp_file):
         plt.ion()
         plt.show()
 
-    # 2 D Series plotting
+    # 2D Series plot
 
     def plot_2d_series():
         nonlocal fr
@@ -200,46 +201,45 @@ def plot_data(bp_file):
             step_count = int(step_count_entry.get())
         except ValueError:
             step_count = 1
+        try:
+            sel_start_str = sel_start_entry.get()
+            sel_start = np.array(eval(sel_start_str))
+        except (ValueError, SyntaxError):
+            sel_start = np.zeros(dim, dtype=int)
+
+        try:
+            sel_count_str = sel_count_entry.get()
+            sel_count = np.array(eval(sel_count_str))
+        except (ValueError, SyntaxError):
+            sel_count = np.ones(dim, dtype=int)
+
+        sel_end = sel_start + sel_count   
+
+        # Check how dimensions are counted
+        count_dim = [0,0]
+        triv_dim = [0]*(dim-2)
+
+        j = 0
+        k = 0
+        for i in range(dim):
+            if (sel_count[i] != 1):
+                count_dim[j] = i
+                j += 1
+            else:
+                triv_dim[k] = i
+                k+=1
 
         for s in range(step_count):
             step_start_current = step_start + s
             var.SetStepSelection([step_start_current,1])
 
-            try:
-                sel_start_str = sel_start_entry.get()
-                sel_start = np.array(eval(sel_start_str))
-            except (ValueError, SyntaxError):
-                sel_start = np.zeros(dim, dtype=int)
-
-            try:
-                sel_count_str = sel_count_entry.get()
-                sel_count = np.array(eval(sel_count_str))
-            except (ValueError, SyntaxError):
-                sel_count = np.ones(dim, dtype=int)
-
-            sel_end = sel_start + sel_count
-            
-            fig = plt.figure(figsize=(8, 8))  # Create a new figure for the plot
-            gs = gridspec.GridSpec(1, 1)  # Create a 1x1 grid for the plot layout
-            ax = fig.add_subplot(gs[0, 0])  # Add a subplot to the figure
-
-            # Check how dimensions are counted
-            count_dim = [0,0]
-            triv_dim = [0]*(dim-2)
-
-            j = 0
-            k = 0
-            for i in range(dim):
-                if (sel_count[i] != 1):
-                    count_dim[j] = i
-                    j += 1
-                else:
-                    triv_dim[k] = i
-                    k+=1
-            
             data = np.empty([sel_count[count_dim[0]], sel_count[count_dim[1]]], dtype=np.float64)
 
             var.SetSelection([sel_start, sel_count])
+
+            fig = plt.figure(figsize=(8, 8))  # Create a new figure for the plot
+            gs = gridspec.GridSpec(1, 1)  # Create a 1x1 grid for the plot layout
+            ax = fig.add_subplot(gs[0, 0])  # Add a subplot to the figure
 
             fr.Get(var, data, adios2.Mode.Sync)
             colorax = ax.imshow(data, origin='lower', interpolation='quadric', extent=[
@@ -261,10 +261,8 @@ def plot_data(bp_file):
             
             plt.ion()
             plt.show()
-            #time.sleep(2)
-            #plt.close()
 
-    # 1 D plotting
+    # 1D plot
 
     def plot_1d():
         nonlocal fr
@@ -333,7 +331,7 @@ def plot_data(bp_file):
         plt.ion()
         plt.show()
 
-    # 1 D Series plotting
+    # 1D Series plot
 
     def plot_1d_series():
         nonlocal fr
@@ -353,41 +351,41 @@ def plot_data(bp_file):
         except ValueError:
             step_count = 1
         
+        try:
+            sel_start_str = sel_start_entry.get()
+            sel_start = np.array(eval(sel_start_str))
+        except (ValueError, SyntaxError):
+            sel_start = np.zeros(dim, dtype=int)
+
+        try:
+            sel_count_str = sel_count_entry.get()
+            sel_count = np.array(eval(sel_count_str))
+        except (ValueError, SyntaxError):
+            sel_count = np.ones(dim, dtype=int)
+
+        sel_end = sel_start + sel_count
+
+        # Check how dimensions are counted
+        count_dim = [0]
+        triv_dim = [0]*(dim-1)
+
+        j = 0
+        k = 0
+        for i in range(dim):
+            if (sel_count[i] != 1):
+                count_dim[j] = i
+                j += 1
+            else:
+                triv_dim[k] = i
+                k+=1
+
         for s in range(step_count):
             step_start_current = step_start + s
             var.SetStepSelection([step_start_current,1])
-
-            try:
-                sel_start_str = sel_start_entry.get()
-                sel_start = np.array(eval(sel_start_str))
-            except (ValueError, SyntaxError):
-                sel_start = np.zeros(dim, dtype=int)
-
-            try:
-                sel_count_str = sel_count_entry.get()
-                sel_count = np.array(eval(sel_count_str))
-            except (ValueError, SyntaxError):
-                sel_count = np.ones(dim, dtype=int)
-
-            sel_end = sel_start + sel_count
             
             fig = plt.figure(figsize=(8, 8))  # Create a new figure for the plot
             gs = gridspec.GridSpec(1, 1)  # Create a 1x1 grid for the plot layout
             ax = fig.add_subplot(gs[0, 0])  # Add a subplot to the figure
-
-            # Check how dimensions are counted
-            count_dim = [0]
-            triv_dim = [0]*(dim-1)
-
-            j = 0
-            k = 0
-            for i in range(dim):
-                if (sel_count[i] != 1):
-                    count_dim[j] = i
-                    j += 1
-                else:
-                    triv_dim[k] = i
-                    k+=1
 
             data = np.empty([sel_count[count_dim[0]]], dtype=np.float64)
             var.SetSelection([sel_start, sel_count])
@@ -404,6 +402,7 @@ def plot_data(bp_file):
             plt.ion()
             plt.show()
 
+    # 2 1D plot
     def plot_1d_v_1d():
         nonlocal fr
 
@@ -481,16 +480,16 @@ def plot_data(bp_file):
         plt.ion()
         plt.show()
 
-    # N D Display
+    # nD Display
 
     def display_nd():
-        nonlocal fr, var, sel_start_entry, sel_count_entry, step_start_entry
+        nonlocal fr
     
         var = io.InquireVariable(selected_var)
         shape = var.Shape()
         dim = len(shape)
 
-        #Step Selection
+        # Step Selection
         try:
             step_start = int(step_start_entry.get())
         except ValueError:
@@ -500,9 +499,8 @@ def plot_data(bp_file):
             step_count = int(step_count_entry.get())
         except ValueError:
             step_count = 1
-        
-        var.SetStepSelection([step_start,step_count])
 
+        # Selection
         try:
             sel_start_str = sel_start_entry.get()
             sel_start = np.array(eval(sel_start_str))
@@ -514,7 +512,7 @@ def plot_data(bp_file):
             sel_count = np.array(eval(sel_count_str))
         except (ValueError, SyntaxError):
             sel_count = np.ones(dim, dtype=int)
-
+            
         # Create a new window for the display
         display_window = tk.Toplevel(root)
         display_window.title("Data Display")
@@ -524,14 +522,18 @@ def plot_data(bp_file):
         text_box.pack()
 
         def update_text_box():
-            nonlocal text_box, fr, var, sel_start, sel_count, step_start
-            var.SetStepSelection([step_start, step_count])
-            var.SetSelection([sel_start, sel_count])
+            nonlocal text_box, fr, var, sel_start, sel_count, step_start, step_count
 
-            data = np.empty(sel_count, dtype=np.float64)
-            fr.Get(var, data, adios2.Mode.Sync)
+            data_str = ""
+            for s in range(step_count):
+                
+                var.SetStepSelection([step_start+s, 1])
+                var.SetSelection([sel_start, sel_count])
 
-            data_str = np.array2string(data, precision=5, separator=', ')
+                data = np.empty(sel_count, dtype=np.float64)
+                fr.Get(var, data, adios2.Mode.Sync)
+
+                data_str += np.array2string(data, precision=5, separator=', ') + "\n"
 
             text_box.delete("1.0", tk.END)
             text_box.insert(tk.END, data_str)
@@ -539,43 +541,7 @@ def plot_data(bp_file):
         update_text_box()
 
 
-    # Check dimensions of input and then plot accordingly
-
-    def check_and_plot():
-        
-        # Creates selection count array for checking purposes
-        try:
-            sel_count_str = sel_count_entry.get()
-            sel_count = np.array(eval(sel_count_str))
-        except (ValueError, SyntaxError):
-            sel_count = np.ones(dim, dtype=int)
-
-        # Check if there's a second selection start for 1d v 1d plotting
-        try:
-            sec_start_str = sec_start_entry.get()
-            sec_start = np.array(eval(sec_start_str))
-            oneD_v_oneD = True
-        except (ValueError, SyntaxError):
-            oneD_v_oneD = False
-
-        j = 0
-        for i in range(dim):
-            if (sel_count[i] != 1):
-                j += 1
-
-        if(oneD_v_oneD):
-            plot_1d_v_1d()
-
-        elif(j == 2):
-            plot_2d()
-            
-
-        elif(j == 1):
-            plot_1d()
-            
-        else:
-            print("Selection dimension not 1 or 2")
-
+    # Check dimensions and steps of selection and plot data accordingly if plot button clicked
     def check_and_plot():
         
         # Creates selection count array for checking purposes
@@ -623,6 +589,7 @@ def plot_data(bp_file):
         else:
             print("Selection dimension not 1 or 2")
 
+    # Displays data if display button clicked
     def check_and_display():
         try:
             sel_count_str = sel_count_entry.get()
@@ -634,9 +601,11 @@ def plot_data(bp_file):
 
     var_listbox.bind("<<ListboxSelect>>", update_selected_var)
     
+    # Plot button
     plot_button = ttk.Button(selection_frame, text="Plot", command=check_and_plot)
     plot_button.pack(side=tk.BOTTOM, padx=5, pady=5)
 
+    # Display button
     display_button = ttk.Button(selection_frame, text="Display", command=check_and_display)
     display_button.pack(side=tk.BOTTOM, padx=5, pady=5)
 
@@ -644,10 +613,10 @@ def plot_data(bp_file):
 
     fr.Close()
 
-
+# Execute code if running in main
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--bp_file", help="Path to the BP file", required=True)
     args = parser.parse_args()
 
-    plot_data(args.bp_file)
+    show_file(args.bp_file)
