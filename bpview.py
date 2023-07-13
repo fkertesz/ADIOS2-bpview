@@ -616,7 +616,7 @@ def show_file(bp_file):
 # Execute code if running in main
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--input", "-i", help="Path to the BP file", required=True)
+    parser.add_argument("--bp_file", "-b", help="Path to the BP file", required=True)
     args = parser.parse_args()
 
-    show_file(args.input)
+    show_file(args.bp_file)
