@@ -20,10 +20,11 @@ Instructions:
 3. The BPView window will pop up with selection options and entries. Select a variable on the left by clicking on it.
 4. Enter an integer each for step start and step count according to available steps displayed on the left. Example: 1.
 5. Enter an array with brackets each for selection start and selection count according to dimensions displayed on the left. Example: [1,13,14].
-6. OPTIONAL: enter an erray for second selection start.
-7. Click on "Display" button if data is to be displayed or "Plot" button if data is to be plotted.
-8. Repeat steps 3-7 to get another display/plot.
-9. Press X on the top right of the window to close it, or press X on the top right of the BPView window or press Control+C in the terminal to close all of the windows and stop the program.D
+6. OPTIONAL: Press the "More options" button for more options. Repeat steps 4 and 5 for the additional options except for the step count which is set to 1. Press the "Selection 1" button to select variable 1 and the "Selection 2" button to select variable 2. Pressing the "More options" button automatically switches to selection 2. Press the "Hide" button to hide the extra options and utilize the other plotting/display options.
+7. Click on "Display" button to display data or "Plot" button to plot data.
+8. OPTIONAL: If a step series was plotted, press the "Next" button to show the plot of the next step or press the "Previous" button to show the plot of the previous step.
+9. Repeat steps 3-7 to get another display/plot.
+10. Press X on the top right of the window to close it, or press X on the top right of the BPView window or press Control+C in the terminal to close all of the windows and stop the program.
 
 
 Data Display:
@@ -57,6 +58,7 @@ Data Display:
 
 2 1-D Array Comparison Plot:
 
+- More options must be displayed.
 - Step count must be 1.
 - Both selection counts must include exactly one entry that is greater than 1. Examples: [1,23,1] , [47,1,1,1].
 
