@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from tkinter import ttk
+from tkinter import scrolledtext
 
 
 # Load BP file
@@ -180,7 +181,7 @@ def show_file(bp_file):
     variables = io.AvailableVariables()  # Get available variables in BP file
     var_names = list(variables.keys())  # Extract variable names
 
-    spec_selected_var = var_names[0]  # Set default selected variable to the first one (if available)
+    spec_selected_var = selected_var  # Set default second selected variable to first selected variable
 
     spec_var_listbox = tk.Listbox(var_frame, width=50)
 
@@ -209,10 +210,10 @@ def show_file(bp_file):
     spec_step_start_label = tk.Label(second_frame, text="Step start:")
 
     spec_step_start_entry = ttk.Entry(second_frame)
-    spec_step_start_entry.insert(0, "0")
+    spec_step_start_entry.insert(0, str(step_start_entry.get()))
 
     # Step count
-    spec_step_count_label = tk.Label(second_frame, text=("Step count:\n" + str(step_count_entry.get())))
+    spec_step_count_label = tk.Label(second_frame, text=("Step count:\n SAME AS LEFT"))
 
     # Selection start
     spec_sel_start_label = tk.Label(second_frame, text="Selection start:")
@@ -221,41 +222,39 @@ def show_file(bp_file):
     spec_shape = spec_var.Shape()
     spec_dim = len(spec_shape)
 
-    # Generates automatic entry for selection start
-    spec_zeros_str = "["
-    for sd in range(spec_dim):
-        spec_zeros_str += "0"
-        if sd != spec_dim - 1:
-            spec_zeros_str += ", "
-    spec_zeros_str += "]"
-
     spec_sel_start_entry = ttk.Entry(second_frame)
-    spec_sel_start_entry.insert(0, spec_zeros_str)
+    spec_sel_start_entry.insert(0, str(sel_start_entry.get()))
 
     # Selection count
     spec_sel_count_label = tk.Label(second_frame, text="Selection count:")
 
-    # Generates automatic entry for selection count
-    spec_ones_str = "["
-    for sd in range(spec_dim):
-        spec_ones_str += "1"
-        if sd != spec_dim - 1:
-            spec_ones_str += ", "
-    spec_ones_str += "]"
-
     spec_sel_count_entry = ttk.Entry(second_frame)
-    spec_sel_count_entry.insert(0, spec_ones_str)
+    spec_sel_count_entry.insert(0, str(sel_count_entry.get()))
+
+    global select1
 
     # Selection1 button
     def button1_com():
-        spec_var_listbox.pack_forget()
-        var_listbox.pack()
+        global select1
+        if select1 == False:
+            spec_var_listbox.pack_forget()
+            var_listbox.pack()
+        select1 = True
+        style.configure('Button1.TButton', font=("TkDefaultFont", 12, "bold"))
+        style.configure('Button2.TButton', font=("TkDefaultFont", 12))
+     
     button1.config(command=button1_com)
 
     # Selection2 button
     def button2_com():
-        var_listbox.pack_forget()
-        spec_var_listbox.pack()
+        global select1
+        if select1:
+            var_listbox.pack_forget()
+            spec_var_listbox.pack()
+        select1 = False
+        style.configure('Button1.TButton', font=("TkDefaultFont", 12))
+        style.configure('Button2.TButton', font=("TkDefaultFont", 12, "bold"))
+
     button2.config(command=button2_com)
 
 
@@ -352,46 +351,163 @@ def show_file(bp_file):
         except (ValueError, SyntaxError):
             spec_sel_count = np.ones(spec_dim, dtype=int)
         
-        fig = plt.figure(figsize=(8, 8))  # Create a new figure for the plot
-        gs = gridspec.GridSpec(1, 1)  # Create a 1x1 grid for the plot layout
-        ax = fig.add_subplot(gs[0, 0])  # Add a subplot to the figure
+        if step_count == 1:
+            window = tk.Tk()
+            window.title("1D v 1D Plot")
 
-        # Check how dimensions are counted
-        count_dim = [0]
+            plot_frame = ttk.Frame(window)
+            plot_frame.pack(side=tk.TOP, padx=5, pady=5)
 
-        j = 0
-        for i in range(dim):
-            if (sel_count[i] != 1):
-                count_dim[j] = i
-                j += 1
+            fig = plt.figure(figsize=(8, 8))  # Create a new figure for the plot
+            gs = gridspec.GridSpec(1, 1)  # Create a 1x1 grid for the plot layout
+            ax = fig.add_subplot(gs[0, 0])  # Add a subplot to the figure
 
-        # Second - check how dimensions are counted
-        spec_count_dim = [0]
+            # Check how dimensions are counted
+            count_dim = [0]
 
-        spec_j = 0
-        for spec_i in range(spec_dim):
-            if (spec_sel_count[spec_i] != 1):
-                spec_count_dim[spec_j] = spec_i
-                spec_j += 1
-        
-        # Plot the values against each other
-        y_values = np.empty([sel_count[count_dim[0]]], dtype=np.float64)
-        var.SetSelection([sel_start, sel_count])
-        fr.Get(var, y_values, adios2.Mode.Sync)
+            j = 0
+            for i in range(dim):
+                if (sel_count[i] != 1):
+                    count_dim[j] = i
+                    j += 1
 
-        x_values = np.empty([spec_sel_count[spec_count_dim[0]]], dtype=np.float64)
-        spec_var.SetSelection([spec_sel_start, spec_sel_count])
-        fr.Get(spec_var, x_values, adios2.Mode.Sync)
+            # Second - check how dimensions are counted
+            spec_count_dim = [0]
 
-        ax.plot(x_values, y_values)
-        ax.set_xlabel(str(spec_count_dim[0])+"-axis")
-        ax.set_ylabel(str(count_dim[0])+"-axis")
+            spec_j = 0
+            for spec_i in range(spec_dim):
+                if (spec_sel_count[spec_i] != 1):
+                    spec_count_dim[spec_j] = spec_i
+                    spec_j += 1
+            
+            # Plot the values against each other
+            y_values = np.empty([sel_count[count_dim[0]]], dtype=np.float64)
+            var.SetSelection([sel_start, sel_count])
+            fr.Get(var, y_values, adios2.Mode.Sync)
 
-        ax.set_title(
-            "Data with starts " + str(sel_start) + " and " + str(spec_sel_start) + " with counts " + str(sel_count) + " and " + str(spec_sel_count) + ", \nsteps " + str(step_start) + " and " + str(spec_step_start))
+            x_values = np.empty([spec_sel_count[spec_count_dim[0]]], dtype=np.float64)
+            spec_var.SetSelection([spec_sel_start, spec_sel_count])
+            fr.Get(spec_var, x_values, adios2.Mode.Sync)
 
-        plt.ion()
-        plt.show()
+            ax.plot(x_values, y_values)
+            ax.set_xlabel(str(spec_count_dim[0])+"-axis")
+            ax.set_ylabel(str(count_dim[0])+"-axis")
+
+            ax.set_title(
+                "Data from variables " + selected_var + " and " + spec_selected_var + " with starts " + str(sel_start) + " and " + str(spec_sel_start) + "\n with counts " + str(sel_count) + " and " + str(spec_sel_count) + ", steps " + str(step_start) + " and " + str(spec_step_start))
+
+            canvas = FigureCanvasTkAgg(fig, master=plot_frame)
+            canvas.draw()
+            canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=1)
+
+        else:
+            # Check how dimensions are counted
+            count_dim = [0]
+
+            j = 0
+            for i in range(dim):
+                if (sel_count[i] != 1):
+                    count_dim[j] = i
+                    j += 1
+
+            # Second - check how dimensions are counted
+            spec_count_dim = [0]
+
+            spec_j = 0
+            for spec_i in range(spec_dim):
+                if (spec_sel_count[spec_i] != 1):
+                    spec_count_dim[spec_j] = spec_i
+                    spec_j += 1
+
+            window = tk.Tk()
+            window.title("1D Plot")
+
+            plot_frame = ttk.Frame(window)
+            plot_frame.pack(side=tk.TOP, padx=5, pady=5)
+
+            butts_frame = ttk.Frame(window)
+            butts_frame.pack(side=tk.BOTTOM, padx=5, pady=5)
+
+            forw_button = ttk.Button(butts_frame, text="Next")
+            forw_button.pack(side=tk.RIGHT)
+
+            back_button = ttk.Button(butts_frame, text="Previous")
+            back_button.pack(side=tk.LEFT)
+
+            global step_1
+            step_1 = step_start
+            global step_2
+            step_2 = spec_step_start
+
+            # Plot function
+            def plspec():
+                # Destroy previous plot if exists
+                if len(plot_frame.winfo_children()) > 0:
+                    for widget in plot_frame.winfo_children():
+                        widget.destroy()
+
+                global step_1
+                var.SetStepSelection([step_1,1])
+
+                global step_2
+                spec_var.SetStepSelection([step_2,1])
+                
+                fig = plt.figure(figsize=(8, 8))  # Create a new figure for the plot
+                gs = gridspec.GridSpec(1, 1)  # Create a 1x1 grid for the plot layout
+                ax = fig.add_subplot(gs[0, 0])  # Add a subplot to the figure
+
+                # Plot the values against each other
+                y_values = np.empty([sel_count[count_dim[0]]], dtype=np.float64)
+                var.SetSelection([sel_start, sel_count])
+                fr.Get(var, y_values, adios2.Mode.Sync)
+
+                x_values = np.empty([spec_sel_count[spec_count_dim[0]]], dtype=np.float64)
+                spec_var.SetSelection([spec_sel_start, spec_sel_count])
+                fr.Get(spec_var, x_values, adios2.Mode.Sync)
+
+                ax.plot(x_values, y_values)
+                ax.set_xlabel(str(spec_count_dim[0])+"-axis")
+                ax.set_ylabel(str(count_dim[0])+"-axis")
+
+                ax.set_title(
+                    "Data from variables " + selected_var + " and " + spec_selected_var + " with starts " + str(sel_start) + " and " + str(spec_sel_start) + "\n with counts " + str(sel_count) + " and " + str(spec_sel_count) + ", steps " + str(step_1) + " and " + str(step_2))
+                canvas = FigureCanvasTkAgg(fig, master=plot_frame)
+                canvas.draw()
+                canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=1)
+
+            # Go forward one step
+            def forw():
+                global step_1
+                step_1 += 1
+                global step_2
+                step_2 += 1
+                plspec()
+                
+                if step_1 == step_start + step_count - 1:
+                    forw_button.config(state=tk.DISABLED)
+                elif step_1 == step_start + 1:
+                    back_button.config(state=tk.NORMAL)
+
+            # Go back one step
+            def back():
+                global step_1
+                step_1 -= 1
+                global step_2
+                step_2 -= 1
+                plspec()
+
+                if step_1 == step_start:
+                    back_button.config(state=tk.DISABLED)
+                elif step_1 == step_start + step_count - 2:
+                    forw_button.config(state=tk.NORMAL)
+
+            forw_button.config(command=forw)
+            back_button.config(command=back)
+
+            # Initial plot
+            plspec()
+            back_button.config(state=tk.DISABLED)
+
 
     #Hide button
     hide_button = tk.Button(second_frame, text="Hide")
@@ -400,14 +516,35 @@ def show_file(bp_file):
     global spec
     spec = False
 
+    style = ttk.Style()
+    style.configure('Button1.TButton', font=("TkDefaultFont", 12))
+    style.configure('Button2.TButton', font=("TkDefaultFont", 12, "bold"))
+
     # Shows more options
     def spec_plot_show():
         global spec
         spec = True
 
+        global select1
+        select1 = False
+
+        spec_selected_var = selected_var
+        spec_selected_var_label.config(text="2nd Variable: " + spec_selected_var)  # Update selected variable label
+
+        spec_step_start_entry.delete(0, tk.END)
+        spec_step_start_entry.insert(0, str(step_start_entry.get()))
+
+        spec_sel_start_entry.delete(0, tk.END)
+        spec_sel_start_entry.insert(0, str(sel_start_entry.get()))
+
+        spec_sel_count_entry.delete(0, tk.END)
+        spec_sel_count_entry.insert(0, str(sel_count_entry.get()))
+
         button1.pack(side=tk.LEFT)
+        button1.config(style='Button1.TButton')
         
         button2.pack(side=tk.RIGHT)
+        button2.config(style='Button2.TButton')
         
         right_frame.pack(side=tk.RIGHT)
 
@@ -437,7 +574,9 @@ def show_file(bp_file):
 
         spec_sel_count_entry.pack() 
 
-        hide_button.pack(side=tk.BOTTOM)      
+        hide_button.pack(side=tk.BOTTOM)  
+
+        spec_button.config(state=tk.DISABLED)
 
     # Hide more options
     def spec_plot_hide():
@@ -477,6 +616,8 @@ def show_file(bp_file):
         spec_sel_count_entry.pack_forget()  
 
         hide_button.pack_forget() 
+
+        spec_button.config(state=tk.NORMAL)
     
     hide_button.config(command=spec_plot_hide)
 
@@ -488,7 +629,7 @@ def show_file(bp_file):
         var = io.InquireVariable(selected_var)
         shape = var.Shape()
         dim = len(shape)
-
+        
         #Step Selection
         try:
             step_start = int(step_start_entry.get())
@@ -513,9 +654,15 @@ def show_file(bp_file):
             sel_count = np.array(eval(sel_count_str))
         except (ValueError, SyntaxError):
             sel_count = np.ones(dim, dtype=int)
-
+       
         sel_end = sel_start + sel_count
         
+        window = tk.Tk()
+        window.title("2D Plot")
+
+        plot_frame = ttk.Frame(window)
+        plot_frame.pack(side=tk.TOP, padx=5, pady=5)
+
         fig = plt.figure(figsize=(8, 8))  # Create a new figure for the plot
         gs = gridspec.GridSpec(1, 1)  # Create a 1x1 grid for the plot layout
         ax = fig.add_subplot(gs[0, 0])  # Add a subplot to the figure
@@ -554,20 +701,21 @@ def show_file(bp_file):
         ax.plot([sel_end[count_dim[1]], sel_end[count_dim[1]]], [sel_start[count_dim[0]], sel_end[count_dim[0]]],
                 color='black')
 
-        ax.set_title("Data with start " + str(sel_start) + " and count " + str(sel_count) + ", step " + str(step_start))
+        ax.set_title("Data from variable " + selected_var + " with start " + str(sel_start) + " and count " + str(sel_count) + ", step " + str(step_start))
         
-        plt.ion()
-        plt.show()
+        canvas = FigureCanvasTkAgg(fig, master=plot_frame)
+        canvas.draw()
+        canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=1)
 
     # 2D Series plot
 
     def plot_2d_series():
         nonlocal fr
-        
+
         var = io.InquireVariable(selected_var)
         shape = var.Shape()
         dim = len(shape)
-
+        
         #Step Selection
         try:
             step_start = int(step_start_entry.get())
@@ -601,13 +749,13 @@ def show_file(bp_file):
                 count_dim[j] = i
                 j += 1
 
-        window_2d = tk.Tk()
-        window_2d.title("2D Series Plot")
+        window = tk.Tk()
+        window.title("2D Series Plot")
 
-        plot_frame = ttk.Frame(window_2d)
+        plot_frame = ttk.Frame(window)
         plot_frame.pack(side=tk.TOP, padx=5, pady=5)
 
-        butts_frame = ttk.Frame(window_2d)
+        butts_frame = ttk.Frame(window)
         butts_frame.pack(side=tk.BOTTOM, padx=5, pady=5)
 
         forw_button = ttk.Button(butts_frame, text="Next")
@@ -653,7 +801,7 @@ def show_file(bp_file):
             ax.plot([sel_end[count_dim[1]], sel_end[count_dim[1]]], [sel_start[count_dim[0]], sel_end[count_dim[0]]],
                     color='black')
 
-            ax.set_title("Data with start " + str(sel_start) + " and count " + str(sel_count) + ", step " + str(step_2d))
+            ax.set_title("Data from variable " + selected_var + " with start " + str(sel_start) + " and count " + str(sel_count) + ", step " + str(step_2d))
             
             canvas = FigureCanvasTkAgg(fig, master=plot_frame)
             canvas.draw()
@@ -723,6 +871,12 @@ def show_file(bp_file):
             sel_count = np.ones(dim, dtype=int)
 
         sel_end = sel_start + sel_count
+
+        window = tk.Tk()
+        window.title("1D Plot")
+
+        plot_frame = ttk.Frame(window)
+        plot_frame.pack(side=tk.TOP, padx=5, pady=5)
         
         fig = plt.figure(figsize=(8, 8))  # Create a new figure for the plot
         gs = gridspec.GridSpec(1, 1)  # Create a 1x1 grid for the plot layout
@@ -752,10 +906,11 @@ def show_file(bp_file):
         ax.set_ylabel("Values")
 
         ax.set_title(
-            "Data with start " + str(sel_start) + " and count " + str(sel_count) + ", step " + str(step_start))
+            "Data from variable " + selected_var + " with start " + str(sel_start) + " and count " + str(sel_count) + ", step " + str(step_start))
 
-        plt.ion()
-        plt.show()
+        canvas = FigureCanvasTkAgg(fig, master=plot_frame)
+        canvas.draw()
+        canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=1)
 
     # 1D Series plot
 
@@ -800,13 +955,13 @@ def show_file(bp_file):
                 count_dim[j] = i
                 j += 1
 
-        window_1d = tk.Tk()
-        window_1d.title("1D Series Plot")
+        window = tk.Tk()
+        window.title("1D Plot")
 
-        plot_frame = ttk.Frame(window_1d)
+        plot_frame = ttk.Frame(window)
         plot_frame.pack(side=tk.TOP, padx=5, pady=5)
 
-        butts_frame = ttk.Frame(window_1d)
+        butts_frame = ttk.Frame(window)
         butts_frame.pack(side=tk.BOTTOM, padx=5, pady=5)
 
         forw_button = ttk.Button(butts_frame, text="Next")
@@ -842,7 +997,7 @@ def show_file(bp_file):
             ax.set_ylabel("Values")
 
             ax.set_title(
-                "Data with start " + str(sel_start) + " and count " + str(sel_count) + ", step " + str(step_1d))
+                "Data from variable " + selected_var + " with start " + str(sel_start) + " and count " + str(sel_count) + ", step " + str(step_1d))
 
             canvas = FigureCanvasTkAgg(fig, master=plot_frame)
             canvas.draw()
@@ -914,14 +1069,20 @@ def show_file(bp_file):
         display_window = tk.Toplevel(root)
         display_window.title("Data Display")
 
+        text_frame = ttk.Frame(display_window)
+        text_frame.pack(side=tk.TOP, padx=5, pady=5)
+
         # Create a text box for displaying the result
-        text_box = tk.Text(display_window, width=80, height=20)
-        text_box.pack()
+        text_box = scrolledtext.ScrolledText(text_frame, wrap=tk.WORD, width=80, height=20)
+        text_box.pack(fill=tk.BOTH, expand=True)
+
+        
+
 
         def update_text_box():
             nonlocal text_box, fr, var, sel_start, sel_count, step_start, step_count
 
-            data_str = ""
+            data_str = "Data from variable " + selected_var + " with start " + str(sel_start) + " and count " + str(sel_count) + ", step " + str(step_start) + " with step count " + str(step_count) + "\n\n"
             for s in range(step_count):
                 
                 var.SetStepSelection([step_start+s, 1])
@@ -961,6 +1122,7 @@ def show_file(bp_file):
             if (sel_count[i] != 1):
                 j += 1
         global spec
+        
 
         if spec:
             plot_1d_v_1d()
@@ -971,11 +1133,11 @@ def show_file(bp_file):
         elif(step_count != 1 and j == 1):
             plot_1d_series()
 
-        elif(j == 2):
+        elif(step_count == 1 and j == 2):
             plot_2d()
             
 
-        elif(j == 1):
+        elif(step_count == 1 and j == 1):
             plot_1d()
             
         else:

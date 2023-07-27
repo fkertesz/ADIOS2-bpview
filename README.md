@@ -1,4 +1,5 @@
 BPView: Browser for ADIOS2 BP files.
+Version 1.5 on 7/27/2023.
 
 Overview:
 
@@ -62,6 +63,11 @@ Data Display:
 - Step count must be 1.
 - Both selection counts must include exactly one entry that is greater than 1. Examples: [1,23,1] , [47,1,1,1].
 
+2 1-D Array Comparison Plot Series:
+
+- More options must be displayed.
+- Step count must be greater than 1.
+- Both selection counts must include exactly one entry that is greater than 1. Examples: [1,23,1] , [47,1,1,1].
 
 Credits:
 
